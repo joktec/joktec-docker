@@ -228,6 +228,26 @@ services:
     depends_on:
       - elasticsearch
 
+  minio:
+    container_name: joktec-minio
+    image: minio/minio
+    env_file: docker.env
+    volumes:
+      - .docker/minio/data:/data
+    ports:
+      - "9000:9000"
+      - '9090:9090'
+    environment:
+      MINIO_ROOT_USER: ${STORAGE_USER}
+      MINIO_ROOT_PASSWORD: ${STORAGE_PASSWORD}
+      MINIO_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      MINIO_DEFAULT_BUCKETS: ${STORAGE_DEFAULT_BUCKETS}
+    restart: always
+    networks:
+      - joktec-network
+    command: server /data --console-address ":9090"
+
 # Docker Networks
 networks:
   joktec-network:
