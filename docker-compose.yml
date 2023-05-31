@@ -9,6 +9,7 @@ services:
       - '27017:27017'
     volumes:
       - .docker/mongo/data:/data/db
+      - .docker/mongo/backup:/data/backup
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${DB_USER_ROOT}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_PASS_ROOT}
@@ -247,6 +248,18 @@ services:
     networks:
       - joktec-network
     command: server /data --console-address ":9090"
+
+  grafana:
+    container_name: joktec-grafana
+    image: grafana/grafana:9.5.2
+    ports:
+      - "3033:3000"
+    volumes:
+      - .docker/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - .docker/grafana/data:/var/lib/grafana
+    restart: always
+    networks:
+      - joktec-network
 
 # Docker Networks
 networks:
