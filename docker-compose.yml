@@ -95,7 +95,7 @@ services:
 
   redis:
     container_name: joktec-redis
-    image: redis:6.0.5
+    image: redis:6.2.0
     env_file: docker.env
     ports:
       - '6379:6379'
