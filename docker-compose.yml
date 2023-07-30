@@ -14,7 +14,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: root
     networks:
       - joktec-network
-    restart: on-failure
+    restart: always
     logging:
       options:
         max-size: '100k'
@@ -36,7 +36,7 @@ services:
       POSTGRES_PASSWORD: root
     networks:
       - joktec-network
-    restart: on-failure
+    restart: always
     logging:
       options:
         max-size: '100k'
@@ -53,13 +53,14 @@ services:
       - '3306:3306'
     volumes:
       - .docker/mysql/data:/var/lib/mysql
+      - .docker/mysql/backup:/var/lib/backup
       - .docker/mysql/provision/mysql:/docker-entrypoint-initdb.d
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_ALLOW_EMPTY_PASSWORD: yes
     networks:
       - joktec-network
-    restart: on-failure
+    restart: always
     logging:
       options:
         max-size: '100k'
@@ -83,7 +84,7 @@ services:
     networks:
       - joktec-network
     # command: redis-server --requirepass ${REDIS_PASS} --appendonly yes
-    restart: on-failure
+    restart: always
     logging:
       options:
         max-size: '100k'
@@ -107,7 +108,7 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
     networks:
       - joktec-network
-    restart: on-failure
+    restart: always
     healthcheck:
       test: rabbitmq-diagnostics -q ping
       interval: 30s
@@ -127,7 +128,7 @@ services:
       ES_JAVA_OPTS: -Xms512m -Xmx512m
       discovery.type: single-node
       bootstrap.memory_lock: true
-    restart: on-failure
+    restart: always
     logging:
       options:
         max-size: '100k'
@@ -145,7 +146,7 @@ services:
     environment:
       MINIO_ACCESS_KEY: accesskey
       MINIO_SECRET_KEY: secretkey
-    restart: on-failure
+    restart: always
     logging:
       options:
         max-size: '100k'
@@ -161,7 +162,21 @@ services:
     volumes:
       - .docker/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
       - .docker/grafana/data:/var/lib/grafana
-    restart: on-failure
+    restart: always
+    networks:
+      - joktec-network
+
+  nginx:
+    container_name: joktec-nginx
+    image: jc21/nginx-proxy-manager:latest
+    ports:
+      - "80:80"
+      - "81:81"
+      - "443:443"
+    volumes:
+      - .docker/nginx/data:/data
+      - .docker/nginx/letsencrypt:/etc/letsencrypt
+    restart: always
     networks:
       - joktec-network
 
