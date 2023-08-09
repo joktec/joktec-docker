@@ -71,6 +71,26 @@ services:
       retries: 5
     command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci --sort_buffer_size=512K --sql_mode="ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"
 
+  mssql:
+    container_name: joktec-mssql
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    ports:
+      - '1433:1433'
+    volumes:
+      - .docker/mssql/data:/var/opt/mssql
+    cap_add:
+      - SYS_PTRACE
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=reallyStrongPwd123
+    user: mssql:10001   # Set the non-root user explicitly
+    networks:
+      - joktec-network
+    restart: always
+    logging:
+      options:
+        max-size: '100k'
+
   redis:
     container_name: joktec-redis
     image: redis:6.2.0
