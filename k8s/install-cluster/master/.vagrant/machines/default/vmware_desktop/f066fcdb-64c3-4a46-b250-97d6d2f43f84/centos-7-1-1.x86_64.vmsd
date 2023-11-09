@@ -1,0 +1,5 @@
+.encoding = "UTF-8"
+cloneOf0 = "/Users/joker/.vagrant.d/boxes/centos-VAGRANTSLASH-7/2004.01/vmware_desktop/centos-7-1-1.x86_64.vmx"
+numCloneOf = "1"
+sentinel0 = "centos-7-1-1.x86_64-disk1-cl1.vmdk"
+numSentinels = "1"
