@@ -3,7 +3,7 @@ version: '3.8'
 services:
   mongo:
     container_name: joktec-mongo
-    image: mongo:4.4
+    image: mongo:7.0.2
     ports:
       - '27017:27017'
     volumes:
@@ -55,6 +55,7 @@ services:
       - .docker/mysql/data:/var/lib/mysql
       - .docker/mysql/backup:/var/lib/backup
       - .docker/mysql/provision/mysql:/docker-entrypoint-initdb.d
+      - .docker/mysql/config/my.cnf:/etc/my.cnf
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_ALLOW_EMPTY_PASSWORD: yes
