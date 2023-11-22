@@ -55,7 +55,6 @@ services:
       - .docker/mysql/data:/var/lib/mysql
       - .docker/mysql/backup:/var/lib/backup
       - .docker/mysql/provision/mysql:/docker-entrypoint-initdb.d
-      - .docker/mysql/config/my.cnf:/etc/my.cnf
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_ALLOW_EMPTY_PASSWORD: yes
@@ -104,7 +103,7 @@ services:
       REDIS_PASSWORD: root
     networks:
       - joktec-network
-    # command: redis-server --requirepass ${REDIS_PASS} --appendonly yes
+    command: redis-server --requirepass root --appendonly yes
     restart: always
     logging:
       options:
@@ -149,6 +148,8 @@ services:
       ES_JAVA_OPTS: -Xms512m -Xmx512m
       discovery.type: single-node
       bootstrap.memory_lock: true
+      xpack.security.enabled: true
+      ELASTIC_PASSWORD: admin
     restart: always
     logging:
       options:
