@@ -19,7 +19,8 @@ services:
       options:
         max-size: '100k'
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongo db:27017/speech-api --quiet
+      test: [ "CMD", "mongo", "--quiet", "127.0.0.1/test", "--eval", "'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)'" ]
+      start_period: 40s
       interval: 30s
       timeout: 10s
       retries: 5
@@ -154,8 +155,12 @@ services:
     logging:
       options:
         max-size: '100k'
-    networks:
-      - joktec-network
+    networks: [ joktec-network ]
+    healthcheck:
+      test: curl --silent http://localhost:9200 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   minio:
     container_name: joktec-minio
@@ -175,6 +180,12 @@ services:
     networks:
       - joktec-network
     command: server /data --console-address ":9090"
+    healthcheck:
+      test: timeout 5s bash -c ':> /dev/tcp/127.0.0.1/9000' || exit 1
+      start_period: 5s
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   grafana:
     container_name: joktec-grafana

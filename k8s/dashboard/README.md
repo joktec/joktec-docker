@@ -1,4 +1,4 @@
-# Setting up Kubernetes Dashboard with Helm
+# Organization up Kubernetes Dashboard with Helm
 
 This guide will walk you through how to install and configure the Kubernetes Dashboard using Helm and create an admin user using a YAML file.
 
