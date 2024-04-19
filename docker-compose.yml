@@ -92,6 +92,24 @@ services:
       options:
         max-size: '100k'
 
+  cassandra:
+    container_name: joktec-cassandra
+    image: cassandra:5.0
+    ports:
+      - '9042:9042'
+    volumes:
+      - .docker/cassandra/data:/var/lib/cassandra
+    environment:
+      CASSANDRA_CLUSTER_NAME: cloudinfra
+      CASSANDRA_USER: root
+      CASSANDRA_PASSWORD: root
+    networks:
+      - joktec-network
+    restart: always
+    logging:
+      options:
+        max-size: '100k'
+
   redis:
     container_name: joktec-redis
     image: redis:6.2.0
@@ -136,32 +154,6 @@ services:
       timeout: 10s
       retries: 5
 
-  elasticsearch:
-    container_name: joktec-elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.6
-    volumes:
-      - .docker/elk/elasticsearch/data:/usr/share/elasticsearch/data:Z
-    ports:
-      - "9200:9200"
-      - "9300:9300"
-    environment:
-      node.name: elasticsearch
-      ES_JAVA_OPTS: -Xms512m -Xmx512m
-      discovery.type: single-node
-      bootstrap.memory_lock: true
-      xpack.security.enabled: true
-      ELASTIC_PASSWORD: admin
-    restart: always
-    logging:
-      options:
-        max-size: '100k'
-    networks: [ joktec-network ]
-    healthcheck:
-      test: curl --silent http://localhost:9200 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
   minio:
     container_name: joktec-minio
     image: minio/minio
@@ -199,17 +191,64 @@ services:
     networks:
       - joktec-network
 
-  nginx:
-    container_name: joktec-nginx
-    image: jc21/nginx-proxy-manager:latest
+  elasticsearch:
+    container_name: joktec-elastic
+    image: bitnami/elasticsearch:latest
     ports:
-      - "80:80"
-      - "81:81"
-      - "443:443"
+      - "9200:9200"
+      - "9300:9300"
     volumes:
-      - .docker/nginx/data:/data
-      - .docker/nginx/letsencrypt:/etc/letsencrypt
+      - .docker/elk/elastic/data:/bitnami/elasticsearch/data
+      - docker/elk/elastic/elasticsearch.yaml:/usr/share/elasticsearch/config/elasticsearch.yml
+    environment:
+      - ELASTICSEARCH_HEAP_SIZE=256m
+      - ELASTICSEARCH_NODE_NAME=elasticsearch
+      - ELASTICSEARCH_CLUSTER_NAME=es-docker-cluster
+      - ELASTICSEARCH_SKIP_TRANSPORT_TLS=false
+      - ELASTICSEARCH_LOCK_ALL_MEMORY=true
     restart: always
+    logging:
+      options:
+        max-size: '100k'
+    networks:
+      - joktec-network
+
+  logstash:
+    container_name: joktec-logstash
+    image: bitnami/logstash:latest
+    ports:
+      - '5010:5010'
+      - '5044:5044'
+      - '9600:9600'
+    volumes:
+      - docker/elk/logstash/logstash.conf:/opt/bitnami/logstash/pipeline/logstash.conf
+    environment:
+      - LOGSTASH_HEAP_SIZE=256m
+      - LOGSTASH_ELASTICSEARCH_HOST=elasticsearch
+      - LOGSTASH_ELASTICSEARCH_PORT_NUMBER=9200
+    depends_on:
+      - elasticsearch
+    restart: always
+    logging:
+      options:
+        max-size: '100k'
+    networks:
+      - joktec-network
+
+  kibana:
+    container_name: joktec-kibana
+    image: bitnami/kibana:latest
+    ports:
+      - "5601:5601"
+    environment:
+      - KIBANA_ELASTICSEARCH_URL=elasticsearch
+      - KIBANA_ELASTICSEARCH_PORT_NUMBER=9200
+    depends_on:
+      - elasticsearch
+    restart: always
+    logging:
+      options:
+        max-size: '100k'
     networks:
       - joktec-network
 
@@ -222,5 +261,4 @@ networks:
 # Docker Volumes
 volumes:
   .docker:
-  setup:
-  elasticsearch:
+    driver: local
