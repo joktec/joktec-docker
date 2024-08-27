@@ -154,6 +154,29 @@ services:
       timeout: 10s
       retries: 5
 
+  kafka:
+    container_name: joktec-kafka
+    image: bitnami/kafka:latest
+    ports:
+      - '9092:9092'
+      - '9093:9093'
+    volumes:
+      - .docker/kafka/data/:/bitnami
+    environment:
+      # KRaft settings
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      # Listeners
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+    networks:
+      - joktec-network
+    restart: always
+
   minio:
     container_name: joktec-minio
     image: minio/minio
@@ -188,6 +211,9 @@ services:
       - .docker/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
       - .docker/grafana/data:/var/lib/grafana
     restart: always
+    logging:
+      options:
+        max-size: '100k'
     networks:
       - joktec-network
 
@@ -199,7 +225,7 @@ services:
       - "9300:9300"
     volumes:
       - .docker/elk/elastic/data:/bitnami/elasticsearch/data
-      - docker/elk/elastic/elasticsearch.yaml:/usr/share/elasticsearch/config/elasticsearch.yml
+      # - docker/elk/elastic/elasticsearch.yaml:/usr/share/elasticsearch/config/elasticsearch.yml
     environment:
       - ELASTICSEARCH_HEAP_SIZE=256m
       - ELASTICSEARCH_NODE_NAME=elasticsearch
@@ -220,8 +246,8 @@ services:
       - '5010:5010'
       - '5044:5044'
       - '9600:9600'
-    volumes:
-      - docker/elk/logstash/logstash.conf:/opt/bitnami/logstash/pipeline/logstash.conf
+#    volumes:
+#      - docker/elk/logstash/logstash.conf:/opt/bitnami/logstash/pipeline/logstash.conf
     environment:
       - LOGSTASH_HEAP_SIZE=256m
       - LOGSTASH_ELASTICSEARCH_HOST=elasticsearch
@@ -251,6 +277,50 @@ services:
         max-size: '100k'
     networks:
       - joktec-network
+
+  prometheus:
+    container_name: joktec-prom
+    image: prom/prometheus:v2.54.0
+    ports:
+      - "9080:9090"
+    volumes:
+      - .docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - .docker/prometheus/data:/prometheus
+    command: "--config.file=/etc/prometheus/prometheus.yml"
+    restart: always
+    logging:
+      options:
+        max-size: '100k'
+    networks:
+      - joktec-network
+
+  mailserver:
+    container_name: joktec-mailserver
+    image: ghcr.io/docker-mailserver/docker-mailserver:latest
+    hostname: mail.joktec.com
+    ports:
+      - "25:25"
+      - "465:465"
+      - "587:587"
+      - "993:993"
+    volumes:
+      - .docker/mailserver/mail-data/:/var/mail/
+      - .docker/mailserver/mail-state/:/var/mail-state/
+      - .docker/mailserver/mail-logs/:/var/log/mail/
+      - .docker/mailserver/config/:/tmp/docker-mailserver/
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - ENABLE_RSPAMD=1
+      - ENABLE_CLAMAV=1
+      - ENABLE_FAIL2BAN=1
+    networks:
+      - joktec-network
+    cap_add:
+      - NET_ADMIN
+    restart: always
+    logging:
+      options:
+        max-size: '100k'
 
 # Docker Networks
 networks:
