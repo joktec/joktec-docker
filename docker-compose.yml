@@ -1,6 +1,21 @@
 version: '3.8'
 
 services:
+  portainer:
+    container_name: joktec-portainer
+    image: portainer/portainer-ce:latest
+    ports:
+      - "9001:9000"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - ".docker/portainer/data:/data"
+    networks:
+      - joktec-network
+    restart: always
+    logging:
+      options:
+        max-size: '100k'
+
   mongo:
     container_name: joktec-mongo
     image: mongo:7.0.2
@@ -19,7 +34,7 @@ services:
       options:
         max-size: '100k'
     healthcheck:
-      test: [ "CMD", "mongo", "--quiet", "127.0.0.1/test", "--eval", "'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)'" ]
+      test: [ "CMD", "mongosh", "--quiet", "127.0.0.1/test", "--eval", "'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)'" ]
       start_period: 40s
       interval: 30s
       timeout: 10s
@@ -166,13 +181,28 @@ services:
       # KRaft settings
       - KAFKA_CFG_NODE_ID=0
       - KAFKA_CFG_PROCESS_ROLES=controller,broker
-      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@joktec-kafka:9093
       # Listeners
       - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+    networks:
+      - joktec-network
+    restart: always
+
+  kafka-ui:
+    container_name: joktec-kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - "9094:8080"
+    environment:
+      DYNAMIC_CONFIG_ENABLED: 'true'
+    depends_on:
+      - kafka
+    volumes:
+      - .docker/kafka/kui/config.yml:/etc/kafkaui/dynamic_config.yaml
     networks:
       - joktec-network
     restart: always
@@ -246,8 +276,8 @@ services:
       - '5010:5010'
       - '5044:5044'
       - '9600:9600'
-#    volumes:
-#      - docker/elk/logstash/logstash.conf:/opt/bitnami/logstash/pipeline/logstash.conf
+    #    volumes:
+    #      - docker/elk/logstash/logstash.conf:/opt/bitnami/logstash/pipeline/logstash.conf
     environment:
       - LOGSTASH_HEAP_SIZE=256m
       - LOGSTASH_ELASTICSEARCH_HOST=elasticsearch
