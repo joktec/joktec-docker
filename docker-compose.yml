@@ -352,6 +352,29 @@ services:
       options:
         max-size: '100k'
 
+  elasticmq:
+    container_name: joktec-elasticmq
+    image: softwaremill/elasticmq:latest
+    ports:
+      - "9324:9324"
+    environment:
+      - JAVA_OPTS=-Dconfig.file=/opt/elasticmq.conf
+      - DISABLE_SECURITY=true
+    volumes:
+      - .docker/elasticmq/elasticmq.conf:/opt/elasticmq.conf
+      - .docker/elasticmq/data:/data
+    networks:
+      - joktec-network
+    restart: always
+    logging:
+      options:
+        max-size: '100k'
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9324" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 # Docker Networks
 networks:
   joktec-network:
