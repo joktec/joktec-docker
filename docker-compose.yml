@@ -22,11 +22,24 @@ services:
     ports:
       - '27017:27017'
     volumes:
+      - .docker/mongo/mongodb.key:/tmp/mongodb.key:ro
       - .docker/mongo/data:/data/db
       - .docker/mongo/backup:/data/backup
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: root
+    command: >
+      sh -c "
+        # 1. Copy file từ thư mục mount vào thư mục nội bộ container
+        cp /tmp/mongodb.key /data/configdb/mongodb_internal.key &&
+      
+        # 2. Bây giờ root có toàn quyền chown/chmod trên file nội bộ này
+        chown 999:999 /data/configdb/mongodb_internal.key &&
+        chmod 400 /data/configdb/mongodb_internal.key &&
+      
+        # 3. Khởi động Mongo với file nội bộ đã được cấp quyền chuẩn
+        exec docker-entrypoint.sh mongod --replSet rs0 --bind_ip_all --keyFile /data/configdb/mongodb_internal.key
+      "
+#    environment:
+#      MONGO_INITDB_ROOT_USERNAME: root
+#      MONGO_INITDB_ROOT_PASSWORD: root
     networks:
       - joktec-network
     restart: always
