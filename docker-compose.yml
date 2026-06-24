@@ -35,11 +35,11 @@ services:
         chmod 400 /data/configdb/mongodb_internal.key &&
       
         # 3. Khởi động Mongo với file nội bộ đã được cấp quyền chuẩn
-        exec docker-entrypoint.sh mongod --replSet rs0 --bind_ip_all --keyFile /data/configdb/mongodb_internal.key
+        exec docker-entrypoint.sh mongod --replSet rs0 --bind_ip_all --auth --keyFile /data/configdb/mongodb_internal.key
       "
-#    environment:
-#      MONGO_INITDB_ROOT_USERNAME: root
-#      MONGO_INITDB_ROOT_PASSWORD: root
+    #    environment:
+    #      MONGO_INITDB_ROOT_USERNAME: root
+    #      MONGO_INITDB_ROOT_PASSWORD: root
     networks:
       - joktec-network
     restart: always
@@ -47,7 +47,7 @@ services:
       options:
         max-size: '100k'
     healthcheck:
-      test: [ "CMD", "mongosh", "--quiet", "127.0.0.1/test", "--eval", "'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)'" ]
+      test: [ "CMD", "mongosh", "--quiet", "mongodb://root:root@127.0.0.1:27017/admin?replicaSet=rs0&directConnection=true", "--eval", "'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)'" ]
       start_period: 40s
       interval: 30s
       timeout: 10s
